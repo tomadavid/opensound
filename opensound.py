@@ -7,6 +7,8 @@ import sys
 from mpv_socket import pause_mpv, forward_mpv, back_mpv, stop_mpv
 import multiprocessing
 import threading
+import random
+from copy import deepcopy
 
 header = r"""
 
@@ -90,11 +92,11 @@ def play_song(song):
                     "--no-input-default-bindings", # disable keyboard actions
                     f"--input-ipc-server={socket_path}", # input commands from socket
                     song[4]])
-    
+
     return process, socket_path
 
 
-def play_song_by_order(song, song_index=0):
+def play_song_by_order(song, shuffle_state, song_index=0):
     """
     Song playing logic
     Handles playlist operations (next/prev song, playing by order)
@@ -109,7 +111,11 @@ def play_song_by_order(song, song_index=0):
     process, socket_path = play_song(song)
 
     end = False # flag for song ending
-    paused = False # flag for pause
+    paused_string = 'Pause ⏸' # flag for pause
+    shuffle = shuffle_state # flag for shuffle state changing
+
+    if shuffle: shuffle_string = "Shuffle 🔀"
+    else: shuffle_string = "By order 🔁"
 
     def song_end():
         """
@@ -127,17 +133,16 @@ def play_song_by_order(song, song_index=0):
 
 
     while True:
-        
+
+        # shuffle (on/off) display
+        if shuffle: shuffle_string = "Shuffle 🔀"
+        else: shuffle_string = "By order 🔁"
+     
         # queue receiving song's menu selection 
         q = multiprocessing.Queue()
 
         # process handling song's menu (play/pause, forward, back, next, ...) -> sends selection to queue q
-        if not paused:
-            # playing
-            p = multiprocessing.Process(target=menu_process, args=(["[p] pause", "[a] ◀◀ 10s", "[d] ▶▶ 10s", "[w] ◀◀◀ prev", "[s] ▶▶▶ next", "[q] quit"], q))
-        else:
-            # paused
-            p = multiprocessing.Process(target=menu_process, args=(["[p] play", "[a] ◀◀ 10s", "[d] ▶▶ 10s", "[w] ◀◀◀ prev", "[s] ▶▶▶ next", "[q] quit"], q))
+        p = multiprocessing.Process(target=menu_process, args=([f"[o] {shuffle_string}", f"[p] {paused_string}", "[a] ◀◀ 10s", "[d] ▶▶ 10s", "[w] ◀◀◀ prev", "[s] ▶▶▶ next", "[q] quit"], q))
         
         # start song menu process 
         p.start()
@@ -163,27 +168,30 @@ def play_song_by_order(song, song_index=0):
 
         # handle menu selection
         # send commands to mpv via mpv socket
-        if menu_index == 0: # play/pause
-            paused = not paused
+        if menu_index == 0: # shuffle/order playing
+            shuffle = not shuffle
+        elif menu_index == 1: # play/pause
+            if paused_string == 'Play ▶': paused_string = 'Pause ⏸' 
+            else: paused_string = 'Play ▶'
             pause_mpv(socket_path)
-        elif menu_index == 1: # back 10s
+        elif menu_index == 2: # back 10s
             back_mpv(socket_path)
-        elif menu_index == 2: # forward 10s
+        elif menu_index == 3: # forward 10s
             forward_mpv(socket_path)
-        elif menu_index == 3: # previous song
+        elif menu_index == 4: # previous song
             stop_mpv(socket_path)
             clear()
-            return song_index-1 # return previous song's playlist index
-        elif menu_index == 4: # next song
+            return song_index-1, shuffle # return previous song's playlist index
+        elif menu_index == 5: # next song
             stop_mpv(socket_path)
             clear()
-            return song_index+1 # return next song's playlist index
-        elif menu_index == 5: # quit
+            return song_index+1, shuffle # return next song's playlist index
+        elif menu_index == 6: # quit
             stop_mpv(socket_path)
             clear()
-            return song_index # same index is returned -> used to exit the playlist
+            return song_index, shuffle # same index is returned -> used to exit the playlist
         
-    return song_index+1 # sond ended naturaly (get next song's index)
+    return song_index+1, shuffle # sond ended naturaly (get next song's index), shuffle flag
 
 
 def song_to_str(song):
@@ -272,6 +280,20 @@ def add_song_to_playlist(song):
         f.write(json_file)
 
 
+def shuffle_playlist_on_song(song, playlist):
+    """
+    returns a shuffled playlist starting with a given song
+
+    :param song -> starting song
+    :param playlist -> playlist to shuffle
+    """
+    shuffled_playlist = deepcopy(playlist)
+    shuffled_playlist.remove(song)
+    random.shuffle(shuffled_playlist) 
+    shuffled_playlist = [song] + shuffled_playlist
+    return shuffled_playlist
+
+
 def playlist():
     """
     Playlists feature
@@ -302,20 +324,68 @@ def playlist():
             playlist_dict = json.load(f)
             songs = playlist_dict['songs']
 
+            # shuffle deactivated
+            shuffle = False
+            shuffled_songs = None
+
             while True:
-                # display songs from selected playlist  in a menu      
-                menu_options = ["< Back"] + [song_to_str(song) for song in songs]
+
+                # shuffle on/off display
+                if shuffle: shuffle_string = "Shuffle 🔀"
+                else: shuffle_string = "By order 🔁"
+
+                # display songs from selected playlist in a menu      
+                menu_options = ["< Back", "[p] Play ▶", f"[s] {shuffle_string}"] + [song_to_str(song) for song in songs]
                 song_index = menu(menu_options)
 
                 # go back
                 if song_index == 0:
                     break
+                
+                # play playlist
+                elif song_index == 1:
+                    if not shuffle: # play by ordered
+                        song_index = 0
+                    else: # play shuffled
+                        song_index = random.randint(0, len(songs)-1) # get random start song
+                        shuffled_songs = shuffle_playlist_on_song(songs[song_index], songs) # build shuffled playlist
 
-                song_index -= 1 # compensate song index (< back is on pos 0
+                # shuffle on/off
+                elif song_index == 2:
+                    shuffle = not shuffle
+                    continue
+
+                # specific song was selected
+                else:
+                    song_index -= 3 # compensate menu options offset
+
+                    if shuffle:
+                        # builds shuffled playlist starting on selected song
+                        shuffled_songs = shuffle_playlist_on_song(songs[song_index], songs) 
+                        song_index = 0
+
 
                 while True:
-                    # play songs by order
-                    next_index = play_song_by_order(songs[song_index], song_index)
+
+                    current_song = None
+
+                    # get song to play (ordered or shuffled playlist)
+                    if shuffle: current_song = shuffled_songs[song_index]
+                    else: current_song = songs[song_index]
+
+                    # play song
+                    next_index, shuffle_song = play_song_by_order(current_song, shuffle, song_index)
+
+                    shuffle = shuffle_song # update shuffle state after the song finishes
+
+                    if shuffle and shuffled_songs is None: # shuffle was activated during the song
+                        # create shuffled playlist starting with played song -> play next song
+                        shuffled_songs = shuffle_playlist_on_song(current_song, songs)
+                        next_index = 1
+
+                    elif not shuffle: # shuffle was deactivated during the song
+                        shuffled_songs = None # delete previous shuffled playlist
+                        next_index = songs.index(current_song) + (next_index - song_index) # previous or next song
 
                     # handle song index outside of playlist dimensions (prev on first, next on last)
                     if next_index == len(songs):
@@ -326,6 +396,7 @@ def playlist():
                         # user pressed quit -> leaves playlist
                         break
                     else: song_index = next_index # set index for next song to be played
+
         
         # New Playlist
         if index == 1:
@@ -365,5 +436,4 @@ if __name__ == "__main__":
     main()
 
 
-# TODO add shuffled order to playlists
 # TODO create playlists with AI
