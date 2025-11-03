@@ -27,11 +27,12 @@ Y88..88P 888 d88P Y8b.     888  888      X88 Y88..88P Y88b 888 888  888 Y88b 888
 """
 
 # number of results apearing whe n«searching for songs
-MAX_SEARCH_RESULTS = 5
+MAX_SEARCH_RESULTS = 10
 
 # cleans screen -> prints only header
 def clear():
     os.system('clear')
+    os.system('stty sane')
     print(header)
 
 
@@ -96,7 +97,7 @@ def play_song(song):
     return process, socket_path
 
 
-def play_song_by_order(song, shuffle_state, song_index=0):
+def play_song_by_order(song, shuffle_state=False, song_index=0):
     """
     Song playing logic
     Handles playlist operations (next/prev song, playing by order)
@@ -238,8 +239,10 @@ def search():
         selected_song = metadata[index]
 
         while True:
+
+            next_index, _ = play_song_by_order(selected_song)
             # replay same song if user selectd next/prev or song ended
-            if play_song_by_order(selected_song) != 0:
+            if next_index != 0:
                 continue
             else:
                 break
@@ -293,6 +296,65 @@ def shuffle_playlist_on_song(song, playlist):
     shuffled_playlist = [song] + shuffled_playlist
     return shuffled_playlist
 
+def new_playlist():
+    # create a json file by inputing name and description (empty playlist)
+    new_playlist = {'name': None, 'description': None, 'songs': []}
+    name = input("Enter playlist name : ")
+    new_playlist['name'] = name
+    clear()
+    description = input("Enter playlist description : ")
+    new_playlist['description'] = description
+    clear()
+    playlist_json = json.dumps(new_playlist)
+    f = open(f"playlists/{name}.json", "w")
+    f.write(playlist_json)
+    return name
+
+from ai_playlists.playlist_generator import playlist_generator
+
+
+def build_playlist(songs):
+    playlist = []
+    for song in songs:
+        query = f"{song[0]} - {song[1]}"
+        metadata = search_music(query, 1)
+        playlist.append(metadata[0])
+    return playlist
+
+
+def ai_playlist():
+
+    clear()
+
+    playlist_name = new_playlist()
+
+    songs = None
+    while True:
+        description = input("Describe your playlist... ")
+        
+        llm_return = playlist_generator(description)
+
+        if llm_return != [] and llm_return is not None:
+            songs = llm_return
+            break
+    
+    ai_playlist = build_playlist(songs)
+    
+    # add song to selectef playlist and store results
+    with open(f"playlists/{playlist_name}.json", "r") as f:
+        playlist = json.load(f)
+        playlist['songs'] = ai_playlist
+        json_file = json.dumps(playlist)
+    with open(f"playlists/{playlist_name}.json", "w") as f:
+        f.write(json_file)
+
+    print(f"""Playlist {playlist_name} was added to 'Your Playlists' !!!""")
+
+    index = menu(["< Back"])
+
+    if index == 0: # go back
+        clear()
+
 
 def playlist():
     """
@@ -300,7 +362,7 @@ def playlist():
     """
     while True:
         # simple menu
-        index = menu(["Your Playlists", "New Playlist", "< Back"])
+        index = menu(["Your Playlists", "New Playlist", "AI playlists", "< Back"])
 
         # Your Playlists
         if index == 0:
@@ -400,20 +462,13 @@ def playlist():
         
         # New Playlist
         if index == 1:
-            # create a json file by inputing name and description (empty playlist)
-            new_playlist = {'name': None, 'description': None, 'songs': []}
-            name = input("Enter playlist name : ")
-            new_playlist['name'] = name
-            clear()
-            description = input("Enter playlist description : ")
-            new_playlist['description'] = description
-            clear()
-            playlist_json = json.dumps(new_playlist)
-            f = open(f"playlists/{name}.json", "w")
-            f.write(playlist_json)
+            new_playlist()
+
+        if index == 2:
+            ai_playlist()
 
         # go back
-        if index == 2:
+        if index == 3:
             break
 
 
@@ -437,3 +492,5 @@ if __name__ == "__main__":
 
 
 # TODO create playlists with AI
+# TODO loop song feature (easy)
+
