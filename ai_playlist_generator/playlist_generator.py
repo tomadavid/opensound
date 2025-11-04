@@ -15,14 +15,12 @@ def playlist_generator(query):
     prompt = PromptTemplate(
         template=(
             """
-            You are a music playlist generator specialized in dark, alternative, and atmospheric music.
+            You are a music playlist generator specialized ADD YOUR PREFERENCES music.
             You create playlists based on a description. It can be artists, genres, moods and other stuff.
 
             These are my preferences:
-            Genres: Darkwave, Post-Punk, Coldwave, Gothic Rock, Alternative Rock,
-            Synthpop, New Wave, Art Rock, Krautrock, Neue Deutsche Welle, Electronic, Electro.
-            Artists: Nürnberg (Belarussian band), Molchat Doma, Radiohead, Muse, Kraftwerk, Depeche Mode,
-            Kino, Ploho, Buerak, Nautilus Pompilius, Chernikovskaya Hata, Utro.
+            Genres: ADD YOUR PREFERENCES
+            Artists: ADD YOUR PREFERENCES
 
             You can also use other stuff on the playlists. It will depend on what I ask. If it's something personal
             give something based on my preferences. If it's something completely different, explore new things.
