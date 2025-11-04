@@ -5,6 +5,13 @@ Had no choice than building a solution myself...
 
 ---
 
+## Tools used:
+- **Youtube Music API** (search songs)
+- **mpv** (play songs)
+- **Huggingface Inference Providers *meta-llama/Llama-3.1-70B-Instruct*** (for playlist generation) 
+
+---
+
 ## ✨ Features
 - 🔍 Search for songs and listen to them with a link to the Youtube Music API
 - 📋 Create playlists manually and add searched songs to them
