@@ -36,11 +36,16 @@ opensound/
 
 ## Demo
 **Music Player**
+---
 <img width="678" height="805" alt="Screenshot from 2025-11-04 16-40-58" src="https://github.com/user-attachments/assets/9721b821-d7ec-40fc-954c-fa951866f895" />
+
 **AI Playlist Generator**
+---
 <img width="840" height="564" alt="Screenshot from 2025-11-04 16-50-59" src="https://github.com/user-attachments/assets/eaf463da-9ec6-4b39-8d5a-d215d99ae5b2" />
+
 **Playlists**
-<img width="840" height="564" alt="Screenshot from 2025-11-04 16-52-43" src="https://github.com/user-attachments/assets/a7c8cd3d-66f4-4062-9283-2a5a62248815" />
+---
+<img width="840" height="564" alt="image" src="https://github.com/user-attachments/assets/5b2cd61f-12be-4d7b-9dc4-a39325036c55" />
 
   
 ---
