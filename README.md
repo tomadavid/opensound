@@ -61,8 +61,8 @@ opensound/
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/tomadavid/booking-bot.git
-cd booking-bot
+git clone https://github.com/tomadavid/opensound.git
+cd opensound
 ```
 
 ### 2️⃣ Create a virtual environment
