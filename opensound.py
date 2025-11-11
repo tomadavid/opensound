@@ -208,8 +208,10 @@ def get_songs_from_playlist(playlist_name):
     return playlist['songs']
         
 
-def add_song_to_playlist(song, playlist):
+def add_song_to_playlist(song, playlist_name):
+    playlist = get_playlist(playlist_name)
     playlist['songs'].append(song)
+    store_playlist(playlist)
 
 
 def select_playlist():
@@ -220,7 +222,7 @@ def select_playlist():
     returns the name of the selected playlist 
     or None if operation was canceled
     """
-    menu_options = ['< Back'].append(get_stored_playlists())
+    menu_options = ['< Back'] + get_stored_playlists()
     index = menu(menu_options)
     
     if index == 0:
@@ -508,6 +510,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
