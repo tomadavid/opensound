@@ -12,16 +12,16 @@ Had no choice than building a solution myself...
 
 ---
 
-## ✨ Features
-- 🔍 Search for songs and listen to them with a link to the Youtube Music API
-- 📋 Create playlists manually and add searched songs to them
-- 🤖 Create playlists with AI (you provide a description of the playlist)
-- 🚫 Listen to your playlists with **no adds**
-- 🔀 Shuffle playing order
+## Features
+- Search for songs and listen to them with a link to the Youtube Music API
+- Create playlists manually and add searched songs to them
+- Create playlists with AI (you provide a description of the playlist)
+- Listen to your playlists with **no adds**
+- Shuffle playing order
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 opensound/
@@ -57,38 +57,38 @@ opensound/
   
 ---
 
-## ⚙️ Setup
+## Setup
 
-### 1️⃣ Clone the repository
+### 1. Clone the repository
 ```bash
 git clone https://github.com/tomadavid/opensound.git
 cd opensound
 ```
 
-### 2️⃣ Create a virtual environment
+### 2. Create a virtual environment
 ```bash
 python -m venv .env
 source .env/bin/activate      # macOS/Linux
 .env\Scripts\activate         # Windows
 ```
 
-### 3️⃣ Install dependencies
+### 3. Install dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4️⃣ Add required file
+### 4. Add required file
 
-#### 🧩 `cookies.txt`
+#### `cookies.txt`
 - Go to Youtube and get a cookies file `coockies.txt` using a browser extention. Add the file to the repository. It is used to pass the autenticity test from yt-dlp.
 
 
-## 🚀 Running the Program
+## Running the Program
 ```bash
 python opensound.py
 ```
 
 ---
 
-## 👤 Author
+## Author
 Developed by **David Toma**  
