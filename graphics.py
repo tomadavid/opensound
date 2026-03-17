@@ -102,3 +102,7 @@ def pause_switch(paused):
     if paused: return 'Play ▶'
     else: return 'Pause ⏸' 
 
+def like_switch(liked):
+    if liked: return 'Liked 🤍'
+    else: return 'Like ♡'
+

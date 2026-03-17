@@ -69,6 +69,7 @@ def music_player(song, shuffle_state=False, song_index=0):
     end = False # flag for song ending
     paused = False # flag for pause
     shuffle = shuffle_state # flag for shuffle state changing
+    liked = check_liked_song(song) # flag if song was liked
 
     def song_end():
         """
@@ -91,7 +92,7 @@ def music_player(song, shuffle_state=False, song_index=0):
         q = multiprocessing.Queue()
 
         # process handling song's menu (play/pause, forward, back, next, ...) -> sends selection to queue q
-        p = multiprocessing.Process(target=menu_process, args=([f"[o] {shuffle_switch(shuffle)}", f"[p] {pause_switch(paused)}", "[a] ◀◀ 10s", "[d] ▶▶ 10s", "[w] ◀◀◀ prev", "[s] ▶▶▶ next", "[q] quit"], q))
+        p = multiprocessing.Process(target=menu_process, args=([f"[o] {shuffle_switch(shuffle)}", f"[l] {like_switch(liked)}", f"[p] {pause_switch(paused)}", "[a] ◀◀ 10s", "[d] ▶▶ 10s", "[w] ◀◀◀ prev", "[s] ▶▶▶ next", "[q] quit"], q))
         
         # start song menu process 
         p.start()
@@ -119,22 +120,28 @@ def music_player(song, shuffle_state=False, song_index=0):
         # send commands to mpv via mpv socket
         if menu_index == 0: # shuffle/order playing
             shuffle = not shuffle
-        elif menu_index == 1: # play/pause
+        elif menu_index == 1: # like/unlike song
+            if not liked:
+                add_song_to_playlist(song, "LIKED_SONGS")
+            else:
+                unlike_song(song)
+            liked = not liked
+        elif menu_index == 2: # play/pause
             paused = not paused
             pause_mpv(socket_path)
-        elif menu_index == 2: # back 10s
+        elif menu_index == 3: # back 10s
             back_mpv(socket_path)
-        elif menu_index == 3: # forward 10s
+        elif menu_index == 4: # forward 10s
             forward_mpv(socket_path)
-        elif menu_index == 4: # previous song
+        elif menu_index == 5: # previous song
             stop_mpv(socket_path)
             clear()
             return song_index-1, shuffle # return previous song's playlist index
-        elif menu_index == 5: # next song
+        elif menu_index == 6: # next song
             stop_mpv(socket_path)
             clear()
             return song_index+1, shuffle # return next song's playlist index
-        elif menu_index == 6: # quit
+        elif menu_index == 7: # quit
             stop_mpv(socket_path)
             clear()
             return song_index, shuffle # same index is returned -> used to exit the playlist
@@ -179,7 +186,8 @@ def get_stored_playlists():
     """
     returns the names of the stored playlists
     """
-    playlists = [f[:-5] for f in os.listdir('playlists')]
+    playlists = [f[:-5] for f in os.listdir('playlists') if f != "LIKED_SONGS.json"]
+    playlists = ["📌 LIKED_SONGS 🤍"] + playlists
     return playlists
 
 
@@ -227,6 +235,8 @@ def select_playlist():
     
     if index == 0:
         return None
+    elif index == 1: # select liked songs playlist (because of the pinned emojis the name in the menu is different)
+        return "LIKED_SONGS"
     return menu_options[index]
 
 
@@ -376,7 +386,7 @@ def ai_playlist():
 
     # add song to selectef playlist and store results
     for song in playlist_songs: 
-        add_song_to_playlist(song, generated_playlist) 
+        add_song_to_playlist(song, generated_playlist['name']) 
     store_playlist(generated_playlist)
 
     print(f"""Playlist {generated_playlist['name']} was added to 'Your Playlists' !!!""")
@@ -473,13 +483,17 @@ def playlist():
             # go back
             if playlist_index == 0:
                 return
-
-            playlist_player(playlists[playlist_index-1])
+            
+            if playlist_index == 1:
+                playlist_player("LIKED_SONGS")
+            else:
+                playlist_player(playlists[playlist_index-1])
 
         
         # New Playlist
         if index == 1:
             new_playlist()
+            clear()
 
         if index == 2:
             ai_playlist()
@@ -489,24 +503,50 @@ def playlist():
             break
 
 
+# like songs
+
+def check_liked_song(song_info):
+    with open("playlists/LIKED_SONGS.json", "r") as f:
+        liked_songs = json.load(f)
+
+    for song in liked_songs['songs']:
+        if song_info == song:
+            return True
+    return False
+
+def unlike_song(song_info):
+    with open("playlists/LIKED_SONGS.json", "r") as f:
+        liked_songs = json.load(f)
+
+    liked_songs['songs'].remove(song_info)
+    store_playlist(liked_songs)
+
+
 ########################
 ########################
 
 
 def main():
+
+    os.makedirs("playlists", exist_ok=True)
+    if not os.path.isfile("playlists/LIKED_SONGS.json"):
+        liked = open("playlists/LIKED_SONGS.json", "w+")
+        liked.write("{\"name\": \"LIKED_SONGS\", \"description\": \"\", \"songs\": []}")
+    
     while True:
         clear()
-        menu_selection = menu(["Search", "Playlists", "Exit"])
+        menu_selection = menu(["Liked Songs 🤍", "Search", "Playlists", "Exit"])
         if menu_selection == 0:
-            search()
+            playlist_player("LIKED_SONGS")
         elif menu_selection == 1:
-            playlist()
+            search()
         elif menu_selection == 2:
+            playlist()
+        elif menu_selection == 3:
             os.system('clear')
             os.system('stty sane')
             return
         
-
 
 if __name__ == "__main__":
     main()
