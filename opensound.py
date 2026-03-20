@@ -9,7 +9,8 @@ import threading
 import random
 from ai_playlist_generator.playlist_generator import playlist_generator
 from copy import deepcopy
-
+import time
+import datetime
 
 # number of results apearing whe n«searching for songs
 MAX_SEARCH_RESULTS = 10
@@ -82,9 +83,17 @@ def music_player(song, shuffle_state=False, song_index=0):
                 end = True # Changes the end flag
                 return
     
+    # checks if song is being played for the minimum time to be counted as listen
+    def detect_song_playing():
+        time.sleep(5)
+        if process.poll() is None:
+            update_statistics(song)
+            
     # thread that checks if song ended
     threading.Thread(target=song_end, daemon=True).start()
-
+            
+    # thread that checks if song was played for longer than 5 seconds
+    threading.Thread(target=detect_song_playing, daemon=True).start()
 
     while True:
      
@@ -522,17 +531,61 @@ def unlike_song(song_info):
     store_playlist(liked_songs)
 
 
-########################
-########################
+def setup_directories():
 
-
-def main():
-
+    """
+    Setup useful directories
+    """
     os.makedirs("playlists", exist_ok=True)
     if not os.path.isfile("playlists/LIKED_SONGS.json"):
         liked = open("playlists/LIKED_SONGS.json", "w+")
         liked.write("{\"name\": \"LIKED_SONGS\", \"description\": \"\", \"songs\": []}")
     
+    os.makedirs("stats", exist_ok=True)
+    if not os.path.isfile("stats/songs.json"):
+        liked = open("stats/songs.json", "w+")
+        liked.write("[]")
+
+
+def update_statistics(song):
+    """
+    Add song play to the stats file
+    """
+
+    with open("stats/songs.json", "r") as f:
+        songs = json.load(f)
+
+    playing_data = {"song": song, "timestamp": str(datetime.datetime.now())}
+
+    songs.append(playing_data)
+
+    songs = json.dumps(songs)
+    with open("stats/songs.json", "w") as f:
+        f.write(songs)
+
+
+########################
+
+# counting most played songs (testing)
+
+from collections import Counter
+
+# all time
+def get_most_played_songs():
+
+    with open("stats/songs.json", "r") as f:
+        songs = json.load(f)
+    
+    count = Counter(tuple(song["song"]) for song in songs)
+
+    print(count)
+########################
+
+
+def main():
+
+    setup_directories()
+
     while True:
         clear()
         menu_selection = menu(["Liked Songs 🤍", "Search", "Playlists", "Exit"])
@@ -546,7 +599,7 @@ def main():
             os.system('clear')
             os.system('stty sane')
             return
-        
 
 if __name__ == "__main__":
     main()
+    
