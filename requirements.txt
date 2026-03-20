@@ -3,3 +3,4 @@ ytmusicapi
 yt-dlp
 langchain
 huggingface_hub
+python-dateutil

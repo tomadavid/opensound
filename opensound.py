@@ -11,6 +11,8 @@ from ai_playlist_generator.playlist_generator import playlist_generator
 from copy import deepcopy
 import time
 import datetime
+from dateutil.relativedelta import relativedelta
+from collections import Counter
 
 # number of results apearing whe n«searching for songs
 MAX_SEARCH_RESULTS = 10
@@ -85,14 +87,14 @@ def music_player(song, shuffle_state=False, song_index=0):
     
     # checks if song is being played for the minimum time to be counted as listen
     def detect_song_playing():
-        time.sleep(5)
+        time.sleep(30)
         if process.poll() is None:
             update_statistics(song)
             
     # thread that checks if song ended
     threading.Thread(target=song_end, daemon=True).start()
             
-    # thread that checks if song was played for longer than 5 seconds
+    # thread that checks if song was played for longer than 30 seconds
     threading.Thread(target=detect_song_playing, daemon=True).start()
 
     while True:
@@ -264,17 +266,18 @@ def shuffle_playlist_on_song(song, playlist):
     return shuffled_playlist
 
 
-def playlist_player(playlist_name):
+def playlist_player(playlist_name=None, songs=None):
     """
     Playlist playing logic
 
     Plays songs from playlist handling Shuffling
     """
 
-    print_playlist_data(get_playlist(playlist_name))
+    if playlist_name is not None:
+        print_playlist_data(get_playlist(playlist_name))
 
-    # get songs from selected playlist
-    songs = get_songs_from_playlist(playlist_name)
+        # get songs from selected playlist
+        songs = get_songs_from_playlist(playlist_name)
 
     # shuffle deactivated
     shuffle = False
@@ -285,8 +288,18 @@ def playlist_player(playlist_name):
         # shuffle on/off display
         shuffle_string = shuffle_switch(shuffle)
 
-        # display songs from selected playlist in a menu      
-        menu_options = ["[q] < Back", "[p] Play ▶", f"[s] {shuffle_string}"] + [song_to_str(song) for song in songs]
+        # display songs from selected playlist in a menu
+        if playlist_name is not None:      
+            menu_options = ["[q] < Back", "[p] Play ▶", f"[s] {shuffle_string}"] + [song_to_str(song) for song in songs]
+        
+        # used on top tracks statistics
+        else:
+            song_str = []
+            for i in range(len(songs)):
+                song_str.append(f"{str(i+1)}" + " "*(2-len(str(i+1))) + f" {song_to_str(songs[i])}")
+            
+            menu_options = ["[q] < Back", "[p] Play ▶", f"[s] {shuffle_string}"] + song_str
+        
         song_index = menu(menu_options)
 
         # go back button
@@ -547,6 +560,10 @@ def setup_directories():
         liked.write("[]")
 
 
+########################
+# Statistics
+########################
+
 def update_statistics(song):
     """
     Add song play to the stats file
@@ -564,22 +581,82 @@ def update_statistics(song):
         f.write(songs)
 
 
-########################
-
-# counting most played songs (testing)
-
-from collections import Counter
-
-# all time
-def get_most_played_songs():
+def get_most_played_songs(interval):
+    """
+    Gets a list of the 20 most played songs given an interval (in months)
+    """
 
     with open("stats/songs.json", "r") as f:
         songs = json.load(f)
     
-    count = Counter(tuple(song["song"]) for song in songs)
+    counter = None
 
-    print(count)
-########################
+    if interval is None: 
+        # all time stats
+        counter = Counter(tuple(song["song"]) for song in songs)
+    else: 
+        # last 1, 6 or 12 months stats
+        counter = Counter(tuple(song["song"]) for song in songs if datetime.datetime.strptime(song['timestamp'], "%Y-%m-%d %H:%M:%S.%f") > datetime.datetime.now() - relativedelta(months=interval))
+
+    return [song for song, _ in counter.most_common(20)]
+
+
+def display_most_played_tracks(interval):
+    """
+    Displays a playlist with the 20 most played songs given an interval (in months)
+    """
+
+    tracks = get_most_played_songs(interval)
+
+    if interval == 1:
+        print("Most Played Tracks - Last Month")
+    if interval == 6:
+        print("Most Played Tracks - Last 6 Months")
+    if interval == 12:
+        print("Most Played Tracks - Last Year")
+    if interval == None:
+        print("Most Played Tracks - All Time")
+
+    playlist_player(None, tracks)
+    
+
+### Statistics Menus Logic
+
+def top_tracks():
+    while True:
+        print()
+        index = menu(['Last Month', 'Last 6 Months', 'Last Year', 'All Time', '< Back'])
+
+        if index == 0:
+            display_most_played_tracks(1)
+        elif index == 1:
+            display_most_played_tracks(6)
+        elif index == 2:
+            display_most_played_tracks(12)
+        elif index == 3:
+            display_most_played_tracks(None)
+        elif index == 4:
+            clear()
+            break
+
+
+def top_artists():
+    # after enabling artist search
+    pass
+
+
+def statistics():
+    while True:
+
+        index = menu(['Top Tracks', 'Top Artists', '< Back'])
+
+        if index == 0:
+            top_tracks()
+        elif index == 1:
+            top_artists()
+        elif index == 2:
+            clear()
+            break
 
 
 def main():
@@ -588,7 +665,7 @@ def main():
 
     while True:
         clear()
-        menu_selection = menu(["Liked Songs 🤍", "Search", "Playlists", "Exit"])
+        menu_selection = menu(["Liked Songs 🤍", "Search", "Playlists", "Statistics", "Exit"])
         if menu_selection == 0:
             playlist_player("LIKED_SONGS")
         elif menu_selection == 1:
@@ -596,6 +673,8 @@ def main():
         elif menu_selection == 2:
             playlist()
         elif menu_selection == 3:
+            statistics()
+        elif menu_selection == 4:
             os.system('clear')
             os.system('stty sane')
             return
