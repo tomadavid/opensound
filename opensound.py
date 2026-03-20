@@ -532,7 +532,7 @@ def check_liked_song(song_info):
         liked_songs = json.load(f)
 
     for song in liked_songs['songs']:
-        if song_info == song:
+        if list(song_info) == song:
             return True
     return False
 
