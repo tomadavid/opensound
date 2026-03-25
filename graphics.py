@@ -2,6 +2,7 @@ import os
 from simple_term_menu import TerminalMenu
 import multiprocessing
 import subprocess
+from ytmusic import yt_artist_description
 
 
 header = r"""
@@ -106,3 +107,22 @@ def like_switch(liked):
     if liked: return 'Liked 🤍'
     else: return 'Like ♡'
 
+""" Artist Page """
+def display_artist(artist):
+    # print artist photo with Ascii art using jp2a
+    subprocess.run(["jp2a", artist[-1], "--width=40", "--colors"])
+    print(f"*** {artist[0]} ***")
+    print(yt_artist_description(artist[1]))
+    print('\n')
+
+def album_to_str(album):
+    return f"{album[0]} ({album[2]})"
+
+def album_to_str_artist(album):
+    return f"{album[0]} - {album[1]} ({album[2]})"
+
+def display_album(album):
+    subprocess.run(["jp2a", album[-1], "--width=40", "--colors"])
+    print(f"{album[0]}")
+    print(f"{album[1]}")
+    print(f"{album[2]}")

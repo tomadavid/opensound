@@ -1,7 +1,7 @@
 import os
 import subprocess
 import json
-from ytmusic import search_music
+from ytmusic import *
 from mpv_socket import *
 from graphics import *
 import multiprocessing
@@ -14,8 +14,10 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from collections import Counter
 
-# number of results apearing whe n«searching for songs
+# number of results apearing when searching
 MAX_SEARCH_RESULTS = 10
+MAX_ARTISTS_SEARCH = 5
+MAX_ALBUMS_SEARCH = 5
 
 ########################
 # Song playing methods #
@@ -241,7 +243,7 @@ def select_playlist():
     returns the name of the selected playlist 
     or None if operation was canceled
     """
-    menu_options = ['< Back'] + get_stored_playlists()
+    menu_options = ["[q] < Back"] + get_stored_playlists()
     index = menu(menu_options)
     
     if index == 0:
@@ -266,7 +268,7 @@ def shuffle_playlist_on_song(song, playlist):
     return shuffled_playlist
 
 
-def playlist_player(playlist_name=None, songs=None):
+def playlist_player(playlist_name=None, songs=None, album=None):
     """
     Playlist playing logic
 
@@ -284,6 +286,8 @@ def playlist_player(playlist_name=None, songs=None):
     shuffled_songs = None # shuffled playlist
 
     while True:
+        if album:
+            display_album(album)
         
         # shuffle on/off display
         shuffle_string = shuffle_switch(shuffle)
@@ -377,7 +381,7 @@ def build_playlist(songs):
     playlist = []
     for song in songs:
         query = f"{song[0]} - {song[1]}"
-        metadata = search_music(query, 1)
+        metadata = yt_search_music(query, 1)
         playlist.append(metadata[0])
     return playlist
 
@@ -413,7 +417,7 @@ def ai_playlist():
 
     print(f"""Playlist {generated_playlist['name']} was added to 'Your Playlists' !!!""")
 
-    index = menu(["< Back"])
+    index = menu(["[q] < Back"])
 
     if index == 0: # go back
         clear()
@@ -423,9 +427,26 @@ def ai_playlist():
 # Core functionalities #
 ########################
 
+def search():
+
+    while True:
+        index = menu(["[q] < Back", 'Tracks', 'Albums', 'Artists'])
+
+        if index == 1:
+            search_song()
+        elif index == 2:
+            search_album()
+        elif index == 3:
+            # TODO
+            search_artist()
+        elif index == 0:
+            clear()
+            break
+
+
 ## Song searching
 
-def search():
+def search_song():
     """
     Search for songs functionality
     """
@@ -434,10 +455,11 @@ def search():
     query = user_input("search ([q] to go back) : ")
 
     if query == None:
+        clear()
         return
     
     # searches and gets metadata from obtained results
-    metadata = search_music(query, MAX_SEARCH_RESULTS)
+    metadata = yt_search_music(query, MAX_SEARCH_RESULTS)
 
     # creates visual representations of obtained songs on a list
     results_options = []
@@ -445,7 +467,7 @@ def search():
         results_options.append(song_to_str(song))
 
     # last item of the menu (go back)
-    results_options.append("< Back")
+    results_options.append("[q] < Back")
 
     while True:
         # displays search results on a menu
@@ -469,7 +491,7 @@ def search():
 
         # user pressed quit
         # when leaving the song ask if add to playlist
-        index = menu(["Add to playlist", "< Back"])
+        index = menu(["Add to playlist", "[q] < Back"])
 
         if index == 0: # add to playlist
             playlist = select_playlist()
@@ -478,6 +500,131 @@ def search():
         elif index == 1: # go back
             clear()
 
+# artist searching
+
+def search_artist():
+    """
+    Search for artists functionality
+    """
+
+    # search box
+    query = user_input("search ([q] to go back) : ")
+
+    if query == None:
+        clear()
+        return
+
+    # searches and gets metadata from obtained results
+    metadata = yt_search_artist(query, MAX_ARTISTS_SEARCH)
+
+    # creates visual representations of obtained songs on a list
+    results_options = []
+    for artist in metadata:
+        results_options.append(artist[0])
+
+    # last item of the menu (go back)
+    results_options.append("[q] < Back")
+
+    while True:
+        # displays search results on a menu
+        clear()
+        index = menu(results_options)
+
+        # go back
+        if index == len(results_options)-1:
+            clear()
+            break
+
+        # play selected song
+        selected_artist = metadata[index]
+
+        artist_page(selected_artist)
+
+# album search
+
+def search_album():
+    """
+    Search for artists functionality
+    """
+
+    # search box
+    query = user_input("search ([q] to go back) : ")
+
+    if query == None:
+        clear()
+        return
+
+    # searches and gets metadata from obtained results
+    albums_searched = yt_search_album(query, MAX_ARTISTS_SEARCH)
+
+    # creates visual representations of obtained songs on a list
+    results_options = []
+    for album in albums_searched:
+        results_options.append(album_to_str_artist(album))
+
+    # last item of the menu (go back)
+    results_options.append("[q] < Back")
+
+    while True:
+        # displays search results on a menu
+        clear()
+        index = menu(results_options)
+
+        # go back
+        if index == len(results_options)-1:
+            clear()
+            break
+
+        # play selected song
+        selected_album = albums_searched[index]
+
+        album_page(selected_album)
+
+
+def album_page(album):
+    clear()
+    tracks = yt_get_album_tracks(album[-2])
+    playlist_player(None, tracks, album)
+
+
+def artist_albums(artist):
+
+    albums = yt_get_artist_albums(artist)
+
+    menu_options = ["[q] < Back"] + [album_to_str(album) for album in albums]
+
+    while True:
+
+        clear()
+        display_artist(artist)
+
+        index = menu(menu_options)
+
+        if index == 0:
+            clear()
+            break
+        else:
+            selected_album = albums[index-1]
+            album_page(selected_album)
+
+
+# artist page
+
+def artist_page(artist):
+
+    while True:
+        clear()
+        display_artist(artist)
+
+        index = menu(["[q] < Back", 'Tracks', 'Albums'])
+
+        if index == 1:
+            pass # TODO
+        elif index == 2:
+            artist_albums(artist)
+        if index == 0:
+            clear()
+            break
 
 ## Playlists
 
@@ -487,10 +634,10 @@ def playlist():
     """
     while True:
         # simple menu
-        index = menu(["Your Playlists", "New Playlist", "AI playlists", "< Back"])
+        index = menu(["[q] < Back", "Your Playlists", "New Playlist", "AI playlists"])
 
         # Your Playlists
-        if index == 0:
+        if index == 1:
 
             # get stored playlists
             playlists = get_stored_playlists()
@@ -499,7 +646,7 @@ def playlist():
                 print("You have no created playlists!")
 
             # menu with playlists
-            menu_options = ["< Back"] + playlists
+            menu_options = ["[q] < Back"] + playlists
             playlist_index = menu(menu_options)
 
             # go back
@@ -513,15 +660,15 @@ def playlist():
 
         
         # New Playlist
-        if index == 1:
+        if index == 2:
             new_playlist()
             clear()
 
-        if index == 2:
+        if index == 3:
             ai_playlist()
 
         # go back
-        if index == 3:
+        if index == 0:
             break
 
 
@@ -625,17 +772,17 @@ def display_most_played_tracks(interval):
 def top_tracks():
     while True:
         print()
-        index = menu(['Last Month', 'Last 6 Months', 'Last Year', 'All Time', '< Back'])
+        index = menu(["[q] < Back", 'Last Month', 'Last 6 Months', 'Last Year', 'All Time'])
 
-        if index == 0:
+        if index == 1:
             display_most_played_tracks(1)
-        elif index == 1:
-            display_most_played_tracks(6)
         elif index == 2:
-            display_most_played_tracks(12)
+            display_most_played_tracks(6)
         elif index == 3:
-            display_most_played_tracks(None)
+            display_most_played_tracks(12)
         elif index == 4:
+            display_most_played_tracks(None)
+        elif index == 0:
             clear()
             break
 
@@ -648,13 +795,13 @@ def top_artists():
 def statistics():
     while True:
 
-        index = menu(['Top Tracks', 'Top Artists', '< Back'])
+        index = menu(["[q] < Back", 'Top Tracks', 'Top Artists'])
 
-        if index == 0:
+        if index == 1:
             top_tracks()
-        elif index == 1:
-            top_artists()
         elif index == 2:
+            top_artists()
+        elif index == 0:
             clear()
             break
 
