@@ -2,7 +2,7 @@ import os
 from simple_term_menu import TerminalMenu
 import multiprocessing
 import subprocess
-from ytmusic import yt_artist_description
+from ytmusic import yt_artist_description, get_artist_photo
 
 
 header = r"""
@@ -126,3 +126,42 @@ def display_album(album):
     print(f"{album[0]}")
     print(f"{album[1]}")
     print(f"{album[2]}")
+
+def display_top_artist(interval, artist):
+
+    photo = get_artist_photo(artist[1])
+
+    # print artist photo with Ascii art using jp2a
+    subprocess.run(["jp2a", photo, "--width=60", "--colors"])
+
+    print("\n")
+    if interval == 1:
+        print(f"*** Your most played artist last month was {artist[0]} ***")
+    elif interval == 6:
+        print(f"*** Your most played artist on the last 6 months was {artist[0]} ***")
+    elif interval == 12:
+        print(f"*** Your most played artist on the last 12 months was {artist[0]} ***")
+
+    print(f"* You listened to a total of {artist[2]} {artist[0]} songs during this period *\n")
+
+    print("Your top 10 artists:")
+
+def display_most_played_song(interval, song):
+
+    # print artist photo with Ascii art using jp2a
+    subprocess.run(["jp2a", song[0][-1], "--width=40", "--colors"])
+
+    print("\n")
+    if interval == 1:
+        print(f"*** Your most played song last month was {song[0][0]} ***")
+    elif interval == 6:
+        print(f"*** Your most played song on the last 6 months was {song[0][0]} ***")
+    elif interval == 12:
+        print(f"*** Your most played song on the last 12 months was {song[0][0]} ***")
+
+    print(f"* You listened to it a total of {song[1]} times during this period *\n")
+
+    print("Your top 20 songs:")
+
+
+

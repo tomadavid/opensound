@@ -147,7 +147,7 @@ def yt_get_album_tracks(album_id):
     metadata = []
     
     for track in tracks:
-        artist = track["artist"][0]
+        artist = track["artists"][0]
         artist = (artist["name"], artist["id"])
         duration = None
 
@@ -199,3 +199,8 @@ def yt_get_artist_popular_tracks(artist):
 
     return metadata
 
+def get_artist_photo(artist_id):
+
+    artist = ytmusic.get_artist(artist_id)
+
+    return artist["thumbnails"][-1]["url"]
