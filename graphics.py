@@ -73,7 +73,7 @@ def user_input(string):
 def print_playing_song_metadata(song):
     # print song data
     print(f"Title: {song[0]}")
-    print(f"Artist: {song[1]}")
+    print(f"Artist: {song[1][0]}")
     print(f"Album: {song[2]}")
     print(" ....................................")
 
@@ -86,7 +86,7 @@ def song_to_str(song):
     returns a string that shows the song to the user
         "title - artist (album) duration"
     """
-    return f"{song[0]} - {song[1]} ({song[2]}) {song[3]}"
+    return f"{song[0]} - {song[1][0]} ({song[2]}) {song[3]}"
 
 def print_playlist_data(playlist):
     print(f"*** {playlist['name']} ***")

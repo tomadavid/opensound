@@ -446,20 +446,24 @@ def search():
 
 ## Song searching
 
-def search_song():
+def search_song(artist = None):
     """
     Search for songs functionality
     """
 
-    # search box
-    query = user_input("search ([q] to go back) : ")
+    if artist == None:
+        # search box
+        query = user_input("search ([q] to go back) : ")
 
-    if query == None:
-        clear()
-        return
-    
-    # searches and gets metadata from obtained results
-    metadata = yt_search_music(query, MAX_SEARCH_RESULTS)
+        if query == None:
+            clear()
+            return
+        
+    if artist is None:
+        # searches and gets metadata from obtained results
+        metadata = yt_search_music(query, MAX_SEARCH_RESULTS)
+    else:
+        metadata = yt_get_artist_popular_tracks(artist)
 
     # creates visual representations of obtained songs on a list
     results_options = []
@@ -470,11 +474,13 @@ def search_song():
     results_options.append("[q] < Back")
 
     while True:
+
         # displays search results on a menu
         index = menu(results_options)
 
         # go back
         if index == len(results_options)-1:
+            clear()
             break
 
         # play selected song
@@ -499,6 +505,10 @@ def search_song():
                 add_song_to_playlist(selected_song, playlist)
         elif index == 1: # go back
             clear()
+
+            if artist is not None:
+                display_artist(artist)
+                print("*** Popular Tracks ***")
 
 # artist searching
 
@@ -608,6 +618,12 @@ def artist_albums(artist):
             album_page(selected_album)
 
 
+# artist tracks
+
+def artist_tracks(artist):
+    search_song(artist)
+
+
 # artist page
 
 def artist_page(artist):
@@ -616,10 +632,10 @@ def artist_page(artist):
         clear()
         display_artist(artist)
 
-        index = menu(["[q] < Back", 'Tracks', 'Albums'])
+        index = menu(["[q] < Back", 'Popular Tracks', 'Albums'])
 
         if index == 1:
-            pass # TODO
+            artist_tracks(artist)
         elif index == 2:
             artist_albums(artist)
         if index == 0:
@@ -687,7 +703,8 @@ def unlike_song(song_info):
     with open("playlists/LIKED_SONGS.json", "r") as f:
         liked_songs = json.load(f)
 
-    liked_songs['songs'].remove(song_info)
+    if song_info in liked_songs['songs']:
+        liked_songs['songs'].remove(song_info)
     store_playlist(liked_songs)
 
 

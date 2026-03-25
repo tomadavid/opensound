@@ -19,21 +19,22 @@ def yt_search_music(query, num_results):
         if "videoId" in song:
             music_results.append({
                 "title": song["title"],
-                "artist": song["artists"][0]["name"] if song.get("artists") else "Unknown",
+                "artist": (song["artists"][0]["name"], 
+                           song["artists"][0]["id"]) if song.get("artists") else "Unknown",
                 "album": song["album"]["name"] if song.get("album") else "Unknown",
                 "videoId": song["videoId"],
                 "cover": song["thumbnails"][-1]["url"] if song.get("thumbnails") else None,
                 "duration": song["duration"]
             })
 
-        # get metadata from selected number of songs
-        metadata = [(result['title'],
-                     result['artist'],
-                     result['album'],
-                     result['duration'], 
-                     f"https://music.youtube.com/watch?v={result['videoId']}",
-                     result['cover'])
-                     for result in music_results[:num_results]]
+    # get metadata from selected number of songs
+    metadata = [(result['title'],
+                    result['artist'],
+                    result['album'],
+                    result['duration'], 
+                    f"https://music.youtube.com/watch?v={result['videoId']}",
+                    result['cover'])
+                    for result in music_results[:num_results]]
 
     return metadata
 
@@ -90,11 +91,11 @@ def yt_search_artist(query, num_results):
                 "photo": artist["thumbnails"][-1]["url"] if artist.get("thumbnails") else None
             })
 
-        # get metadata from selected number of songs
-        metadata = [(result['artist'],
-                     result['id'],
-                     result['photo'])
-                     for result in artist_results[:num_results]]
+    # get metadata from selected number of songs
+    metadata = [(result['artist'],
+                    result['id'],
+                    result['photo'])
+                    for result in artist_results[:num_results]]
         
     return metadata
 
@@ -128,6 +129,8 @@ def yt_get_artist_albums(artist):
                            album['browseId'], 
                            album["thumbnails"][-1]["url"]))
 
+    album_list.sort(key=lambda t: t[2], reverse=True)
+
     return album_list
 
 def yt_artist_description(artist_id):
@@ -144,7 +147,8 @@ def yt_get_album_tracks(album_id):
     metadata = []
     
     for track in tracks:
-        artist = ", ".join([artist["name"] for artist in track.get("artists", [])])
+        artist = track["artist"][0]
+        artist = (artist["name"], artist["id"])
         duration = None
 
         if track["videoType"] == "MUSIC_VIDEO_TYPE_OMV":
@@ -161,3 +165,37 @@ def yt_get_album_tracks(album_id):
                           album_data['thumbnails'][-1]['url']))
         
     return metadata
+
+def yt_get_artist_popular_tracks(artist):
+
+ # search
+    results = ytmusic.search(artist[0], filter="songs")
+    
+    # extract selected information from songs
+    music_results = []
+    for song in results:
+        if "videoId" in song:
+            for song_artist in song["artists"]:
+                if song_artist["id"] == artist[1]:
+                    music_results.append({
+                        "title": song["title"],
+                        "artist": (song["artists"][0]["name"], 
+                                   song["artists"][0]["id"]) if song.get("artists") else "Unknown",
+                        "album": song["album"]["name"] if song.get("album") else "Unknown",
+                        "videoId": song["videoId"],
+                        "cover": song["thumbnails"][-1]["url"] if song.get("thumbnails") else None,
+                        "duration": song["duration"]
+                    })
+                    break
+
+    # get metadata from selected number of songs
+    metadata = [(result['title'],
+                    result['artist'],
+                    result['album'],
+                    result['duration'], 
+                    f"https://music.youtube.com/watch?v={result['videoId']}",
+                    result['cover'])
+                    for result in music_results[:20]]
+
+    return metadata
+
