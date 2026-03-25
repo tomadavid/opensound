@@ -37,8 +37,9 @@ def yt_search_music(query, num_results):
 
     return metadata
 
-def yt_get_ytmusic_link(track, artist):
-    return yt_search_music(f"{track} {artist}", 1)[0][-2]
+def yt_get_ytmusic_link(track, artist, album):
+    search = yt_search_music(f"{track} {artist} {album}", 1)
+    return (search[0][-2], search[0][-3])
 
 def yt_search_album(query, num_results):
     """
@@ -144,16 +145,18 @@ def yt_get_album_tracks(album_id):
     
     for track in tracks:
         artist = ", ".join([artist["name"] for artist in track.get("artists", [])])
+        duration = None
 
         if track["videoType"] == "MUSIC_VIDEO_TYPE_OMV":
-            link = yt_get_ytmusic_link(track["title"], artist)
+            link, duration = yt_get_ytmusic_link(track["title"], artist, album_data["title"])
         else:
             link = f"https://music.youtube.com/watch?v={track['videoId']}"
+            duration = track["duration"]
 
         metadata.append((track['title'],
                           artist,
                           track['album'],
-                          track['duration'], 
+                          duration, 
                           link,
                           album_data['thumbnails'][-1]['url']))
         
