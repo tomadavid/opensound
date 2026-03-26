@@ -79,10 +79,15 @@ pip install -r requirements.txt
 #### `cookies.txt`
 - Go to Youtube and get a cookies file `cookies.txt` using a browser extention. Add the file to the repository. It is used to pass the autenticity test from yt-dlp.
 
+### 5. Set the project path on `opensound_run.sh`
+
+```bash
+chmod +x opensound_run.sh
+```
 
 ## Running the Program
 ```bash
-python opensound.py
+./opensound_run.sh
 ```
 
 ---
