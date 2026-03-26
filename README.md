@@ -1,6 +1,6 @@
 <img width="825" height="461" alt="image" src="https://github.com/user-attachments/assets/b929b299-419d-4803-81ea-7b690b9d4146" />
 
-# Opensound Music Player — No more adds
+# Opensound - Linux Terminal Music Player — No more adds
 
 I needed to play my playlists without adds for my late night coding sessions and I have so many principles that I refuse to spend money on music without adds.
 Had no choice than building a solution myself... btw spotify sucks
@@ -20,7 +20,7 @@ Had no choice than building a solution myself... btw spotify sucks
 - 🤖 Create playlists with AI (you provide a description of the playlist) - 🚧 WORK IN PROGRESS 🚧
 - 🔊 Listen to your playlists with **no adds**
 - 🔀 Shuffle playing order
-- 📊 Statistics for most played songs - 🚧 MORE ADVANCED STATISTICS SOON 🚧
+- 📊 Statistics for most played songs and artists
 - 💚 Like songs and listen to them on your liked songs list
 
 ---
@@ -40,16 +40,14 @@ Had no choice than building a solution myself... btw spotify sucks
 ```
 opensound/
 │
-├── ai_playlist_generator/
-│         ├── output_parser.py          # LLM output parsing
-│         └── playlist_generator.py     # LLM logic for generating playlists
-│  
-├── playlists/                          # created playlists are stored here 
-│ 
 ├── graphics.py                         # Display variables and functions
 ├── mpv_socket.py                       # mpv commands for interaction with mpv player via a socket
+├── music_player.py                     # music playing process handling with mpv
 ├── opensound.py                        # main program
-└── ytmusic.py                          # song searching using Youtube Music API
+├── playlists.py                        # playlist handling logic
+├── search.py                           # functions for searching tracks, albums and artists
+├── stats.py                            # functions for statistic making about played songs and artists
+└── ytmusic.py                          # searching using ytmusicapi
 
 ```
 ---
